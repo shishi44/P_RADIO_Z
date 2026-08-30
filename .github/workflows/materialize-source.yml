@@ -1,0 +1,46 @@
+name: Materialize staged source
+
+on:
+  push:
+    branches:
+      - tmp-upload
+    paths:
+      - .upload-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          ref: tmp-upload
+
+      - name: Verify archive and materialize source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .upload/source.part* > /tmp/source.b64
+          base64 -d /tmp/source.b64 > /tmp/source.zip
+          echo "2a9fd6cd4776df484096a970d1466ab2908255a97a9f2fed37b914b9be1a35db  /tmp/source.zip" | sha256sum -c -
+          mkdir -p /tmp/extracted
+          unzip -q /tmp/source.zip -d /tmp/extracted
+          test -f /tmp/extracted/P_RADIO_Z/index.html
+          test -f /tmp/extracted/P_RADIO_Z/apps-script/Code.gs
+          test -f /tmp/extracted/P_RADIO_Z/gateway/server.js
+          test -f /tmp/extracted/P_RADIO_Z/tests/static-check.mjs
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/extracted/P_RADIO_Z/. .
+
+      - name: Commit verified implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: add B+ image upgrade implementation"
+          git push origin HEAD:tmp-upload
