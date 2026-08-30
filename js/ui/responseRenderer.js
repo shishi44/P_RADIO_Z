@@ -1,7 +1,7 @@
 import { getTemplateById } from "../config/templates.js?v=41";
 import { setText } from "../utils/dom.js?v=41";
 import { getPublicImageUrl } from "../services/publicImageService.js?v=41";
-import { openImageLightbox } from "./imageLightbox.js?v=41";
+import { openImageLightbox } from "./imageLightbox.js?v=43";
 
 const renderSequences = new WeakMap();
 
@@ -23,12 +23,12 @@ function createImagesContainer(content, response, sequence) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "response-image";
-    button.setAttribute("aria-label", `${image.name || `投稿画像 ${index + 1}`}を拡大表示`);
+    button.setAttribute("aria-label", `投稿画像 ${index + 1} を拡大表示`);
     button.dataset.state = "loading";
 
     const preview = document.createElement("img");
     preview.className = "response-image__preview";
-    preview.alt = image.name || `投稿画像 ${index + 1}`;
+    preview.alt = `投稿画像 ${index + 1}`;
     preview.loading = "lazy";
     preview.decoding = "async";
     preview.hidden = true;

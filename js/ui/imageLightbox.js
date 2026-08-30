@@ -79,7 +79,7 @@ function renderCurrent() {
   const image = currentImages[currentIndex];
   if (!image) return;
   const sequence = ++requestSequence;
-  titleElement.textContent = image.name || "投稿画像";
+  titleElement.textContent = "画像";
   positionElement.textContent = `${currentIndex + 1} / ${currentImages.length}`;
   previousButton.disabled = currentIndex <= 0;
   nextButton.disabled = currentIndex >= currentImages.length - 1;
@@ -91,7 +91,7 @@ function renderCurrent() {
     const imageUrl = getPublicImageUrl(image, { variant: "full" });
     imageElement.onload = () => {
       if (sequence !== requestSequence || !dialog.open) return;
-      imageElement.alt = image.name || `投稿画像 ${currentIndex + 1}`;
+      imageElement.alt = `投稿画像 ${currentIndex + 1}`;
       imageElement.hidden = false;
       stateElement.textContent = "";
       stateElement.dataset.state = "";
