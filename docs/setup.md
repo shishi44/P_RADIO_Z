@@ -18,13 +18,23 @@ Driveの共有権限は変更しません。
 
 ## 3. Cloud Run Gateway
 
-`gateway/` をCloud Runへデプロイします。環境変数:
+Google Cloud Shellで `gateway/deploy-cloud-run.sh` を使うと、API有効化、専用サービスアカウント、Secret Manager、ソースデプロイ、ヘルスチェックまで自動化できます。
 
-- `P_RADIO_ACCESS_TOKEN`: 24文字以上のランダム値
-- `DRIVE_ALLOWED_FOLDER_ID`: Googleフォームのファイルアップロード先フォルダID
+```bash
+PROJECT_ID="your-google-cloud-project-id" \
+DRIVE_ALLOWED_FOLDER_ID="your-form-file-responses-root-folder-id" \
+./gateway/deploy-cloud-run.sh
+```
+
+`DRIVE_ALLOWED_FOLDER_ID` には、質問別サブフォルダではなくGoogleフォームが作る **`<フォーム名> (File responses)` 親フォルダ**を指定します。Gateway側は配下フォルダを最大8階層まで確認します。
+
+Cloud Run実行サービスアカウントを、その親フォルダの「閲覧者」として共有してください。Drive全体の権限は不要です。アクセスキーはGitHubへ保存せずSecret Managerへ格納します。
+
+主要設定:
+
+- `P_RADIO_ACCESS_TOKEN`: Secret ManagerからCloud Runへ注入
+- `DRIVE_ALLOWED_FOLDER_ID`: Googleフォームの `File responses` 親フォルダID
 - `ALLOWED_ORIGINS`: `https://shishi44.github.io`
-
-Cloud Runの実行サービスアカウントを、該当Driveフォルダの「閲覧者」として共有してください。
 
 ## 4. P_RADIO_Z
 
