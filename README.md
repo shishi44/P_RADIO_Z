@@ -41,7 +41,7 @@ Googleフォームのお便りをGoogle Sheetsから読み込み、配信・OBS�
 ## セキュリティ
 
 - GitHub Pages側へサービスアカウント鍵やCloud認証情報を置かない。
-- GatewayのアクセスキーはブラウザlocalStorageへ保存される。OBS URL生成時はURLクエリにも含まれるため、そのURL自体を秘密情報として扱う。
+- GatewayのアクセスキーはブラウザlocalStorageへ保存される。OBS URL生成時はURLフラグメントに含まれます。フラグメントはGitHub PagesへのHTTPリクエストには送信されませんが、そのURL自体は秘密情報として扱います。
 - Gatewayは `DRIVE_ALLOWED_FOLDER_ID` 配下のJPEG/PNG/WebPだけ許可する。
 - Gatewayは画像をWebPへ再エンコードし、EXIF等のメタデータを除去する。
 - 投稿本文は `textContent` で描画し、HTMLとして実行しない。
