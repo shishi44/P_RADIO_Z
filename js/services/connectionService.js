@@ -1,5 +1,5 @@
-import { APP_CONFIG } from "../config/appConfig.js?v=40";
-import { parseGoogleSheetUrl } from "../api/googleSheetsApi.js?v=40";
+import { APP_CONFIG } from "../config/appConfig.js?v=41";
+import { parseGoogleSheetUrl } from "../api/googleSheetsApi.js?v=41";
 
 const memoryFallback = new Map();
 
@@ -19,16 +19,6 @@ function sanitizeColumn(value, fallback = -1) {
   const number = Number(value);
   return Number.isInteger(number) && number >= -1 ? number : fallback;
 }
-function sanitizeGatewayUrl(value) {
-  const raw = String(value ?? "").trim();
-  if (!raw) return "";
-  const url = new URL(raw);
-  const localHttp = url.protocol === "http:" && ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
-  if (url.protocol !== "https:" && !localHttp) throw new Error("画像ゲートウェイURLはHTTPSを使用してください。");
-  url.hash = "";
-  url.search = "";
-  return url.toString().replace(/\/$/, "");
-}
 function normalizeSheetConnection(value = {}) {
   return {
     type: "sheet",
@@ -38,9 +28,7 @@ function normalizeSheetConnection(value = {}) {
     nameColumn: sanitizeColumn(value.nameColumn, 1),
     contentColumn: sanitizeColumn(value.contentColumn, 2),
     timestampColumn: sanitizeColumn(value.timestampColumn, 0),
-    imageColumn: sanitizeColumn(value.imageColumn, -1),
-    imageGatewayUrl: sanitizeGatewayUrl(value.imageGatewayUrl),
-    imageGatewayToken: String(value.imageGatewayToken ?? "").trim()
+    imageColumn: sanitizeColumn(value.imageColumn, -1)
   };
 }
 
@@ -64,42 +52,31 @@ export function clearConnection() {
   removeStored(APP_CONFIG.connectionKey);
 }
 
-export function createSheetConnection(sheetUrl, mapping = {}, imageGateway = {}) {
+export function createSheetConnection(sheetUrl, mapping = {}) {
   const parsed = parseGoogleSheetUrl(sheetUrl);
   return normalizeSheetConnection({
     ...parsed,
     nameColumn: mapping.nameColumn,
     contentColumn: mapping.contentColumn,
     timestampColumn: mapping.timestampColumn,
-    imageColumn: mapping.imageColumn,
-    imageGatewayUrl: imageGateway.url,
-    imageGatewayToken: imageGateway.token
+    imageColumn: mapping.imageColumn
   });
 }
 
-export function connectionFromQuery(
-  params = new URLSearchParams(location.search),
-  fragmentParams = new URLSearchParams(location.hash.replace(/^#/, ""))
-) {
+export function connectionFromQuery(params = new URLSearchParams(location.search)) {
   if (params.get("source") !== "sheet") return null;
   const spreadsheetId = params.get("sheet") || "";
   if (!spreadsheetId) return null;
-  try {
-    return normalizeSheetConnection({
-      type: "sheet",
-      spreadsheetId,
-      gid: params.get("gid") || "0",
-      sourceUrl: "",
-      nameColumn: params.get("name"),
-      contentColumn: params.get("content"),
-      timestampColumn: params.get("timestamp"),
-      imageColumn: params.get("image"),
-      imageGatewayUrl: params.get("gateway") || "",
-      imageGatewayToken: fragmentParams.get("access") || params.get("access") || ""
-    });
-  } catch {
-    return null;
-  }
+  return normalizeSheetConnection({
+    type: "sheet",
+    spreadsheetId,
+    gid: params.get("gid") || "0",
+    sourceUrl: "",
+    nameColumn: params.get("name"),
+    contentColumn: params.get("content"),
+    timestampColumn: params.get("timestamp"),
+    imageColumn: params.get("image")
+  });
 }
 
 export function connectionLabel(connection = loadConnection()) {

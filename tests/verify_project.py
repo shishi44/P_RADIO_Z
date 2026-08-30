@@ -1,5 +1,5 @@
 from pathlib import Path
-import json, re, sys
+import json, sys
 
 root = Path(__file__).resolve().parents[1]
 errors = []
@@ -14,15 +14,17 @@ check(any('<script>alert(1)</script>' in x.get('content', '') for x in sample['r
 
 required = [
     'index.html', 'viewer.html', 'obs.html', 'capture.html',
-    'js/editor.js', 'js/services/responseService.js', 'js/services/imageGatewayService.js',
+    'js/editor.js', 'js/services/responseService.js', 'js/services/publicImageService.js',
     'js/ui/responseRenderer.js', 'js/ui/imageLightbox.js', 'js/utils/obsUrl.js',
-    'apps-script/Code.gs', 'gateway/server.js', 'gateway/package.json',
-    'docs/architecture.md', 'docs/setup.md', 'docs/security.md'
+    'apps-script/Code.gs', 'docs/architecture.md', 'docs/setup.md', 'docs/security.md'
 ]
 for rel in required:
     check((root / rel).exists(), f'missing: {rel}')
 
-removed = ['js/services/csvStorage.js', 'js/utils/obsExport.js', 'js/v31-patch.js']
+removed = [
+    'js/services/csvStorage.js', 'js/utils/obsExport.js', 'js/v31-patch.js',
+    'js/services/imageGatewayService.js', 'gateway'
+]
 for rel in removed:
     check(not (root / rel).exists(), f'obsolete file still exists: {rel}')
 
@@ -38,24 +40,26 @@ check('textContent' in (root / 'js/utils/dom.js').read_text(encoding='utf-8'), '
 check('parseCsv' not in js, 'CSV parser reference detected')
 check('downloadStandaloneObsHtml' not in js, 'standalone OBS HTML reference detected')
 check('imageColumn' in js and 'images:' in js, 'image response contract missing')
+check('imageGatewayUrl' not in js and 'imageGatewayToken' not in js, 'gateway connection state still present')
 
 index = (root / 'index.html').read_text(encoding='utf-8')
 check('csv-file-input' not in index and 'OBS用HTMLを保存' not in index, 'removed UI still present')
 check('sheet-image-column' in index, 'image column mapping missing')
-check('gateway-url-input' in index and 'gateway-token-input' in index, 'gateway settings UI missing')
+check('gateway-url-input' not in index and 'gateway-token-input' not in index, 'gateway settings UI still present')
 
 apps_script = (root / 'apps-script/Code.gs').read_text(encoding='utf-8')
-for token in ['FV_IMAGES_JSON', 'FILE_UPLOAD', 'DriveApp.getFileById', 'installImageMetadataTrigger']:
+for token in ['FV_IMAGES_JSON', 'setupPradioZ', 'ANYONE_WITH_LINK', 'DriveApp.Permission.VIEW', 'thumbnailUrl', 'resourceKey']:
     check(token in apps_script, f'Apps Script requirement missing: {token}')
+check(apps_script.index('extractFileIdsFromSheetRow_') < apps_script.index('extractFileIdsFromFormResponse_'), 'sheet-row extraction should be preferred')
 
-gateway = (root / 'gateway/server.js').read_text(encoding='utf-8')
-for token in ['P_RADIO_ACCESS_TOKEN', 'DRIVE_ALLOWED_FOLDER_ID', 'drive.readonly', 'timingSafeEqual', 'image/webp', 'sharp(']:
-    check(token in gateway, f'Gateway security requirement missing: {token}')
-check('service-account' not in gateway.lower(), 'hard-coded service account hint detected')
+public_service = (root / 'js/services/publicImageService.js').read_text(encoding='utf-8')
+check('drive.google.com' in public_service, 'Drive image host validation missing')
+check('evil.example' not in public_service, 'unexpected test host in production service')
 
 readme = (root / 'README.md').read_text(encoding='utf-8')
 check('CSV読み込み: **廃止**' in readme, 'README CSV removal not documented')
 check('OBS用単一HTML書き出し: **廃止**' in readme, 'README standalone HTML removal not documented')
+check('Cloud Run Image Gateway: **廃止**' in readme, 'README gateway removal not documented')
 
 if errors:
     print('FAILED')

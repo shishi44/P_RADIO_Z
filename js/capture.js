@@ -1,10 +1,10 @@
-import { APP_CONFIG } from "./config/appConfig.js?v=40";
-import { getTemplateById } from "./config/templates.js?v=40";
-import { loadResponses,clearResponseCache } from "./services/responseService.js?v=40";
-import { loadSettings,getTemplateSettings,loadSelectedResponseId,saveSelectedResponseId } from "./services/settingsService.js?v=40";
-import { loadConnection } from "./services/connectionService.js?v=40";
-import { qs,setText,setHidden } from "./utils/dom.js?v=40";
-import { renderResponse,applyTemplateStylesheet } from "./ui/responseRenderer.js?v=40";
+import { APP_CONFIG } from "./config/appConfig.js?v=41";
+import { getTemplateById } from "./config/templates.js?v=41";
+import { loadResponses,clearResponseCache } from "./services/responseService.js?v=41";
+import { loadSettings,getTemplateSettings,loadSelectedResponseId,saveSelectedResponseId } from "./services/settingsService.js?v=41";
+import { loadConnection } from "./services/connectionService.js?v=41";
+import { qs,setText,setHidden } from "./utils/dom.js?v=41";
+import { renderResponse,applyTemplateStylesheet } from "./ui/responseRenderer.js?v=41";
 
 const elements={
   stylesheet:qs("#template-stylesheet"),status:qs("#capture-status"),preview:qs("#capture-preview"),

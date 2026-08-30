@@ -1,17 +1,17 @@
-import { TEMPLATES, FONT_LIMITS, getTemplateById } from "./config/templates.js?v=40";
-import { fetchGoogleSheetTable, parseGoogleSheetUrl } from "./api/googleSheetsApi.js?v=40";
-import { loadResponses, getDataSourceLabel, clearResponseCache } from "./services/responseService.js?v=40";
-import { loadConnection, saveConnection, clearConnection, createSheetConnection } from "./services/connectionService.js?v=40";
-import { loadSettings, getTemplateSettings, updateTemplateSettings, resetTemplateSettings, saveSelectedResponseId, loadSelectedResponseId } from "./services/settingsService.js?v=40";
-import { loadReviewedIds, setReviewed, setReviewedRange } from "./services/reviewStateService.js?v=40";
-import { qs, setText, setHidden } from "./utils/dom.js?v=40";
-import { formatDateTime } from "./utils/helpers.js?v=40";
-import { suggestColumnMapping } from "./utils/tabular.js?v=40";
-import { buildLiveObsUrl } from "./utils/obsUrl.js?v=40";
-import { renderResponse, applyTemplateStylesheet } from "./ui/responseRenderer.js?v=40";
-import { renderResponseList, updateSelectedResponse } from "./ui/responseList.js?v=40";
-import { renderTemplateSelector, updateSelectedTemplate } from "./ui/templateSelector.js?v=40";
-import { createFontSizeControl } from "./ui/fontSizeControl.js?v=40";
+import { TEMPLATES, FONT_LIMITS, getTemplateById } from "./config/templates.js?v=41";
+import { fetchGoogleSheetTable, parseGoogleSheetUrl } from "./api/googleSheetsApi.js?v=41";
+import { loadResponses, getDataSourceLabel, clearResponseCache } from "./services/responseService.js?v=41";
+import { loadConnection, saveConnection, clearConnection, createSheetConnection } from "./services/connectionService.js?v=41";
+import { loadSettings, getTemplateSettings, updateTemplateSettings, resetTemplateSettings, saveSelectedResponseId, loadSelectedResponseId } from "./services/settingsService.js?v=41";
+import { loadReviewedIds, setReviewed, setReviewedRange } from "./services/reviewStateService.js?v=41";
+import { qs, setText, setHidden } from "./utils/dom.js?v=41";
+import { formatDateTime } from "./utils/helpers.js?v=41";
+import { suggestColumnMapping } from "./utils/tabular.js?v=41";
+import { buildLiveObsUrl } from "./utils/obsUrl.js?v=41";
+import { renderResponse, applyTemplateStylesheet } from "./ui/responseRenderer.js?v=41";
+import { renderResponseList, updateSelectedResponse } from "./ui/responseList.js?v=41";
+import { renderTemplateSelector, updateSelectedTemplate } from "./ui/templateSelector.js?v=41";
+import { createFontSizeControl } from "./ui/fontSizeControl.js?v=41";
 
 const elements = {
   stylesheet: qs("#template-stylesheet"),
@@ -48,8 +48,6 @@ const elements = {
   sheetContent: qs("#sheet-content-column"),
   sheetTimestamp: qs("#sheet-timestamp-column"),
   sheetImage: qs("#sheet-image-column"),
-  gatewayUrl: qs("#gateway-url-input"),
-  gatewayToken: qs("#gateway-token-input"),
   sheetSave: qs("#sheet-save-button"),
   disconnect: qs("#disconnect-button"),
   obsLiveUrl: qs("#obs-live-url"),
@@ -247,8 +245,6 @@ function readMapping() {
 function openConnectionDialog() {
   if (state.connection.type === "sheet") {
     elements.sheetUrl.value = state.connection.sourceUrl || `https://docs.google.com/spreadsheets/d/${state.connection.spreadsheetId}/edit#gid=${state.connection.gid}`;
-    elements.gatewayUrl.value = state.connection.imageGatewayUrl || "";
-    elements.gatewayToken.value = state.connection.imageGatewayToken || "";
   }
   elements.connectionDialog.showModal();
 }
@@ -269,7 +265,7 @@ async function testSheet() {
 async function saveSheetConnection() {
   if (!state.pendingSheet) return testSheet();
   try {
-    state.connection = saveConnection(createSheetConnection(elements.sheetUrl.value, readMapping(), { url: elements.gatewayUrl.value, token: elements.gatewayToken.value }));
+    state.connection = saveConnection(createSheetConnection(elements.sheetUrl.value, readMapping()));
     state.reviewedIds = loadReviewedIds(state.connection); clearResponseCache(); elements.connectionDialog.close(); updateConnectionBadge();
     await refreshResponses({ force: true });
   } catch (error) { setText(elements.sheetState, error.message); elements.sheetState.dataset.state = "error"; }
@@ -299,9 +295,8 @@ function updateObsDialog() {
   const liveUrl = buildLiveObsUrl({ connection: state.connection, templateId: template.id, ...values, selectedId: state.selectedId });
   elements.obsLiveUrl.value = liveUrl;
   elements.copyObsUrl.disabled = !liveUrl;
-  const hasImageAccess = Boolean(state.connection.imageGatewayUrl && state.connection.imageGatewayToken);
   elements.obsLiveNote.textContent = liveUrl
-    ? `Googleスプレッドシートを自動更新します。${hasImageAccess ? "画像アクセスキーはURLフラグメントに格納されます。このURLは秘密として扱ってください。" : "画像を使う場合はゲートウェイ設定も保存してください。"}`
+    ? "Googleスプレッドシートを自動更新します。公開リンク画像もそのまま表示されます。"
     : "Googleスプレッドシート接続後にBrowser Source URLを生成できます。";
 }
 async function copyObsUrl() {

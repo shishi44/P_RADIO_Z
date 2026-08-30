@@ -1,11 +1,22 @@
-# Security Notes
+# Security
 
-- Drive原画像は匿名公開しない。
-- GitHubリポジトリへ秘密鍵、サービスアカウントJSON、Bearer tokenをコミットしない。
-- Gatewayは読み取り専用Drive scopeを使用する。
-- Cloud Runサービスアカウントにはアップロード先フォルダだけを共有する。
-- `DRIVE_ALLOWED_FOLDER_ID` で任意のDrive file IDをプロキシできないよう制限する。
-- JPEG/PNG/WebP以外は拒否する。SVG/HTMLは配信しない。
-- `sharp` で再エンコードしてEXIF等を除去する。
-- フロントエンド本文は `textContent` を維持する。
-- OBS URLにアクセスキーが入る場合、URLは認証情報として扱う。
+P_RADIO_Zの現在の画像方式は、簡単さを優先した **公開リンク方式** です。
+
+## 守っていること
+
+- 回答本文は `textContent` で描画し、HTMLとして実行しない。
+- 画像メタデータはJPEG / PNG / WebPだけ受け付ける。
+- フロントエンドは `https://drive.google.com/` の画像URLだけを許可する。
+- Apps Scriptが書く画像URL以外の任意URLをそのまま実行しない。
+
+## 意図的に許可していること
+
+Apps Scriptは画像を `ANYONE_WITH_LINK + VIEW` に変更します。そのため、画像URLを知っている人はGoogleアカウントへログインせず閲覧できます。
+
+この方式は、画像が見られても問題ない1人運用に限定してください。
+
+## プライバシー上の注意
+
+Google Driveのリンク共有では、ファイル所有者の名前やメールアドレスが表示される場合があります。また、`FV_IMAGES_JSON` には画像ファイル名も含まれます。
+
+機密画像、個人情報を含む画像、第三者に公開できない画像には使用しないでください。

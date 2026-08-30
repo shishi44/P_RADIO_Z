@@ -1,4 +1,4 @@
-import { loadImageObjectUrl } from "../services/imageGatewayService.js?v=40";
+import { getPublicImageUrl } from "../services/publicImageService.js?v=41";
 
 let dialog;
 let imageElement;
@@ -9,7 +9,6 @@ let previousButton;
 let nextButton;
 let currentImages = [];
 let currentIndex = 0;
-let currentConnection = null;
 let restoreTarget = null;
 let requestSequence = 0;
 
@@ -76,7 +75,7 @@ function buildDialog() {
   return dialog;
 }
 
-async function renderCurrent() {
+function renderCurrent() {
   const image = currentImages[currentIndex];
   if (!image) return;
   const sequence = ++requestSequence;
@@ -89,15 +88,21 @@ async function renderCurrent() {
   stateElement.textContent = "画像を読み込んでいます…";
   stateElement.dataset.state = "loading";
   try {
-    const objectUrl = await loadImageObjectUrl(image, currentConnection, { variant: "full" });
-    if (sequence !== requestSequence || !dialog.open) return;
-    imageElement.src = objectUrl;
-    imageElement.alt = image.name || `投稿画像 ${currentIndex + 1}`;
-    imageElement.hidden = false;
-    stateElement.textContent = "";
-    stateElement.dataset.state = "";
+    const imageUrl = getPublicImageUrl(image, { variant: "full" });
+    imageElement.onload = () => {
+      if (sequence !== requestSequence || !dialog.open) return;
+      imageElement.alt = image.name || `投稿画像 ${currentIndex + 1}`;
+      imageElement.hidden = false;
+      stateElement.textContent = "";
+      stateElement.dataset.state = "";
+    };
+    imageElement.onerror = () => {
+      if (sequence !== requestSequence || !dialog.open) return;
+      stateElement.textContent = "画像を表示できませんでした。画像の共有設定を確認してください。";
+      stateElement.dataset.state = "error";
+    };
+    imageElement.src = imageUrl;
   } catch (error) {
-    if (sequence !== requestSequence || !dialog.open) return;
     stateElement.textContent = error.message || "画像を表示できませんでした。";
     stateElement.dataset.state = "error";
   }
@@ -109,12 +114,11 @@ function move(delta) {
   renderCurrent();
 }
 
-export function openImageLightbox({ images, startIndex = 0, connection, trigger } = {}) {
+export function openImageLightbox({ images, startIndex = 0, trigger } = {}) {
   if (!Array.isArray(images) || !images.length) return;
   buildDialog();
   currentImages = images;
   currentIndex = Math.max(0, Math.min(images.length - 1, Number(startIndex) || 0));
-  currentConnection = connection;
   restoreTarget = trigger instanceof HTMLElement ? trigger : document.activeElement;
   if (!dialog.open) dialog.showModal();
   renderCurrent();

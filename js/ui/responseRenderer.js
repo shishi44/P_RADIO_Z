@@ -1,18 +1,18 @@
-import { getTemplateById } from "../config/templates.js?v=40";
-import { setText } from "../utils/dom.js?v=40";
-import { loadImageObjectUrl } from "../services/imageGatewayService.js?v=40";
-import { openImageLightbox } from "./imageLightbox.js?v=40";
+import { getTemplateById } from "../config/templates.js?v=41";
+import { setText } from "../utils/dom.js?v=41";
+import { getPublicImageUrl } from "../services/publicImageService.js?v=41";
+import { openImageLightbox } from "./imageLightbox.js?v=41";
 
 const renderSequences = new WeakMap();
 
 export function applyTemplateStylesheet(linkElement, templateId) {
   const template = getTemplateById(templateId);
-  const stylesheetHref = `${template.stylesheet}?v=40`;
+  const stylesheetHref = `${template.stylesheet}?v=41`;
   if (linkElement.getAttribute("href") !== stylesheetHref) linkElement.setAttribute("href", stylesheetHref);
   return template;
 }
 
-function createImagesContainer(content, response, options, sequence) {
+function createImagesContainer(content, response, sequence) {
   const images = Array.isArray(response.images) ? response.images : [];
   if (!images.length) return;
   const section = document.createElement("section");
@@ -36,21 +36,29 @@ function createImagesContainer(content, response, options, sequence) {
     state.className = "response-image__state";
     state.textContent = "画像読込中";
     button.append(preview, state);
-    button.addEventListener("click", () => openImageLightbox({ images, startIndex: index, connection: options.connection, trigger: button }));
+    button.addEventListener("click", () => openImageLightbox({ images, startIndex: index, trigger: button }));
     section.append(button);
 
-    loadImageObjectUrl(image, options.connection, { variant: "thumb" }).then((objectUrl) => {
-      if (renderSequences.get(content) !== sequence || !button.isConnected) return;
-      preview.src = objectUrl;
-      preview.hidden = false;
-      state.textContent = "";
-      button.dataset.state = "ready";
-    }).catch((error) => {
-      if (renderSequences.get(content) !== sequence || !button.isConnected) return;
+    try {
+      const imageUrl = getPublicImageUrl(image, { variant: "thumb" });
+      preview.addEventListener("load", () => {
+        if (renderSequences.get(content) !== sequence || !button.isConnected) return;
+        preview.hidden = false;
+        state.textContent = "";
+        button.dataset.state = "ready";
+      }, { once: true });
+      preview.addEventListener("error", () => {
+        if (renderSequences.get(content) !== sequence || !button.isConnected) return;
+        state.textContent = "画像を表示できません";
+        button.dataset.state = "error";
+        button.disabled = true;
+      }, { once: true });
+      preview.src = imageUrl;
+    } catch (error) {
       state.textContent = error.message || "画像を表示できません";
       button.dataset.state = "error";
       button.disabled = true;
-    });
+    }
   });
   content.append(section);
 }
@@ -75,6 +83,6 @@ export function renderResponse(host, response, options = {}) {
   setText(content, response?.content || (response?.images?.length ? "" : "内容未入力"));
   const sequence = (renderSequences.get(content) || 0) + 1;
   renderSequences.set(content, sequence);
-  createImagesContainer(content, response ?? {}, options, sequence);
+  createImagesContainer(content, response ?? {}, sequence);
   return template;
 }

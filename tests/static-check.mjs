@@ -11,6 +11,7 @@ const { TEMPLATES, getTemplateById } = await import('../js/config/templates.js')
 const settings = await import('../js/services/settingsService.js');
 const helpers = await import('../js/utils/helpers.js');
 const tabular = await import('../js/utils/tabular.js');
+const publicImages = await import('../js/services/publicImageService.js');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -38,12 +39,26 @@ const mapping = tabular.suggestColumnMapping(headers);
 assert(mapping.timestampColumn === 0 && mapping.nameColumn === 1 && mapping.contentColumn === 2 && mapping.imageColumn === 3, 'column suggestion failed');
 
 const imageJson = JSON.stringify([
-  { fileId: '1AbCdEfGhIjKlMnOp', name: 'photo.jpg', mimeType: 'image/jpeg' },
+  {
+    fileId: '1AbCdEfGhIjKlMnOp',
+    name: 'photo.jpg',
+    mimeType: 'image/jpeg',
+    public: true,
+    resourceKey: '0-testKey',
+    thumbnailUrl: 'https://drive.google.com/thumbnail?id=1AbCdEfGhIjKlMnOp&sz=w640',
+    url: 'https://drive.google.com/thumbnail?id=1AbCdEfGhIjKlMnOp&sz=w2560'
+  },
   { fileId: '2AbCdEfGhIjKlMnOp', name: 'unsafe.svg', mimeType: 'image/svg+xml' }
 ]);
 const payload = tabular.tableToResponsePayload({ headers, rows: [['2026-08-30T00:00:00Z', '獅子', '本文', imageJson]] }, mapping, { reverse: false });
 assert(payload.responses.length === 1, 'response mapping failed');
 assert(payload.responses[0].images.length === 1, 'image MIME filtering failed');
 assert(payload.responses[0].images[0].name === 'photo.jpg', 'image metadata mapping failed');
+assert(payload.responses[0].images[0].public === true, 'public image flag missing');
+assert(publicImages.getPublicImageUrl(payload.responses[0].images[0], { variant: 'thumb' }).startsWith('https://drive.google.com/thumbnail'), 'public Drive URL failed');
+assert(publicImages.getPublicImageUrl({ fileId: '1AbCdEfGhIjKlMnOp', resourceKey: '0-testKey' }, { variant: 'full' }).includes('sz=w2560'), 'fallback Drive URL failed');
+let unsafeRejected = false;
+try { publicImages.getPublicImageUrl({ fileId: '1AbCdEfGhIjKlMnOp', url: 'https://evil.example/image.jpg' }, { variant: 'full' }); } catch { unsafeRejected = true; }
+assert(unsafeRejected, 'non-Drive image URL must be rejected');
 
 console.log('Node static behavior checks: OK');

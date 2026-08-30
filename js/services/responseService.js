@@ -1,8 +1,8 @@
-import { APP_CONFIG } from "../config/appConfig.js?v=40";
-import { fetchGoogleSheetTable } from "../api/googleSheetsApi.js?v=40";
-import { loadConnection, connectionLabel } from "./connectionService.js?v=40";
-import { tableToResponsePayload } from "../utils/tabular.js?v=40";
-import { toStringSafe } from "../utils/helpers.js?v=40";
+import { APP_CONFIG } from "../config/appConfig.js?v=41";
+import { fetchGoogleSheetTable } from "../api/googleSheetsApi.js?v=41";
+import { loadConnection, connectionLabel } from "./connectionService.js?v=41";
+import { tableToResponsePayload } from "../utils/tabular.js?v=41";
+import { toStringSafe } from "../utils/helpers.js?v=41";
 
 let memoryCache = null;
 let cacheKey = "";
@@ -12,7 +12,11 @@ function normalizeImages(images) {
   return Object.freeze(images.slice(0, APP_CONFIG.maxImagesPerResponse).map((image) => Object.freeze({
     fileId: toStringSafe(image?.fileId).trim(),
     name: toStringSafe(image?.name).trim() || "投稿画像",
-    mimeType: toStringSafe(image?.mimeType).trim().toLowerCase()
+    mimeType: toStringSafe(image?.mimeType).trim().toLowerCase(),
+    public: image?.public !== false,
+    resourceKey: toStringSafe(image?.resourceKey).trim(),
+    thumbnailUrl: toStringSafe(image?.thumbnailUrl).trim(),
+    url: toStringSafe(image?.url).trim()
   })).filter((image) => image.fileId));
 }
 function normalizeResponse(item, index) {
@@ -48,8 +52,7 @@ async function fetchSample(options = {}) {
   return response.json();
 }
 function keyForConnection(connection) {
-  const safe = connection?.type === "sheet" ? { ...connection, imageGatewayToken: connection.imageGatewayToken ? "configured" : "" } : connection;
-  return JSON.stringify(safe ?? { type: "none" });
+  return JSON.stringify(connection ?? { type: "none" });
 }
 
 export async function loadResponses(options = {}) {

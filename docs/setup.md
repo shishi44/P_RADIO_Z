@@ -1,53 +1,79 @@
-# Setup
+# P_RADIO_Z かんたんセットアップ
 
-## 1. Googleフォーム / Sheets
+この手順は、P_RADIO_Zを1人で使うことを想定しています。Cloud RunやGoogle Cloudの設定は不要です。
 
-Googleフォームの回答先をGoogleスプレッドシートにします。現在の静的GitHub Pages構成では本文取得にGVizを使うため、回答シートは閲覧可能な共有設定が必要です。
+## 1. Googleフォームを用意する
 
-## 2. Apps Script
+Googleフォームに次の質問を作ります。
 
-回答スプレッドシートで **拡張機能 → Apps Script** を開き、`apps-script/Code.gs` を貼り付けます。`installImageMetadataTrigger()` を1度実行してください。
+- `お名前(ラジオネーム)`
+- `内容`
+- `画像（任意）` — 質問形式を **ファイルのアップロード** にする
 
-フォーム送信後、`FV_IMAGES_JSON` 列へ次のような値が入ります。
+画像は必須にしなくても構いません。
 
-```json
-[{"fileId":"...","name":"photo.jpg","mimeType":"image/jpeg"}]
-```
+## 2. 回答スプレッドシートを作る
 
-Driveの共有権限は変更しません。
+Googleフォームの **回答 → スプレッドシートにリンク** から回答スプレッドシートを作ります。
 
-## 3. Cloud Run Gateway
+## 3. Apps Scriptを1回だけ設定する
 
-Google Cloud Shellで `gateway/deploy-cloud-run.sh` を使うと、API有効化、専用サービスアカウント、Secret Manager、ソースデプロイ、ヘルスチェックまで自動化できます。
+1. 回答スプレッドシートを開く。
+2. **拡張機能 → Apps Script** を開く。
+3. 最初から入っているコードを削除する。
+4. `apps-script/Code.gs` の内容をすべて貼り付ける。
+5. 保存する。
+6. 上部の関数一覧から `setupPradioZ` を選ぶ。
+7. **実行**を押す。
+8. 初回だけ表示されるGoogleの権限確認を許可する。
 
-```bash
-PROJECT_ID="your-google-cloud-project-id" \
-DRIVE_ALLOWED_FOLDER_ID="your-form-file-responses-root-folder-id" \
-./gateway/deploy-cloud-run.sh
-```
+正常に終わると、回答シートに `FV_IMAGES_JSON` 列が作成されます。
 
-`DRIVE_ALLOWED_FOLDER_ID` には、質問別サブフォルダではなくGoogleフォームが作る **`<フォーム名> (File responses)` 親フォルダ**を指定します。Gateway側は配下フォルダを最大8階層まで確認します。
+その後はフォームが送信されるたびに自動処理されます。毎回Apps Scriptを操作する必要はありません。
 
-Cloud Run実行サービスアカウントを、その親フォルダの「閲覧者」として共有してください。Drive全体の権限は不要です。アクセスキーはGitHubへ保存せずSecret Managerへ格納します。
+### 画像について自動で行われること
 
-主要設定:
+Apps ScriptはアップロードされたJPEG / PNG / WebPを、Google Driveの **「リンクを知っている全員・閲覧者」** に変更します。その後、P_RADIO_Zが使う表示URLを `FV_IMAGES_JSON` に保存します。
 
-- `P_RADIO_ACCESS_TOKEN`: Secret ManagerからCloud Runへ注入
-- `DRIVE_ALLOWED_FOLDER_ID`: Googleフォームの `File responses` 親フォルダID
-- `ALLOWED_ORIGINS`: `https://shishi44.github.io`
+## 4. 回答スプレッドシートを閲覧可能にする
 
-## 4. P_RADIO_Z
+回答スプレッドシート右上の **共有** から、一般的なアクセスを **リンクを知っている全員 / 閲覧者** にします。
 
-管理画面で以下を設定します。
+これはP_RADIO_ZがブラウザからGoogle Sheetsの回答を読むために必要です。
 
-- GoogleスプレッドシートURL
-- お名前列
-- 内容列
-- タイムスタンプ列（任意）
-- 画像メタデータ列（通常 `FV_IMAGES_JSON`）
-- Gateway URL
-- Gatewayアクセスキー
+## 5. P_RADIO_Zへ接続する
 
-## 5. OBS
+1. P_RADIO_Zを開く。
+2. **データ接続** を開く。
+3. 回答スプレッドシートのURLを貼る。
+4. **シートを読み込む** を押す。
+5. 自動選択された列を確認する。
+   - お名前 → `お名前(ラジオネーム)`
+   - 内容 → `内容`
+   - タイムスタンプ → `タイムスタンプ`
+   - 画像メタデータ → `FV_IMAGES_JSON`
+6. **この設定で接続** を押す。
 
-「OBSで使う」からBrowser Source URLをコピーします。画像アクセスキーを含む場合、そのURLは第三者へ共有しないでください。
+これで完了です。
+
+## 6. テストする
+
+Googleフォームから画像を1枚付けて回答します。数秒後にP_RADIO_Zの **更新** を押し、本文の下にサムネイルが出れば成功です。画像をクリックすると拡大できます。
+
+## OBSで使う場合
+
+P_RADIO_Zの **OBSで使う** からBrowser Source URLをコピーします。追加の画像アクセスキーはありません。
+
+## 困ったとき
+
+### `FV_IMAGES_JSON` が増えない
+
+回答スプレッドシートを再読み込みし、上部メニュー **P_RADIO_Z → 初期設定をする** をもう一度実行してください。
+
+### 古い回答の画像が表示されない
+
+上部メニュー **P_RADIO_Z → すべての回答を再処理** を実行してください。
+
+### 画像だけ表示されない
+
+Google Driveで該当画像を開き、共有設定が **リンクを知っている全員 / 閲覧者** になっているか確認してください。学校・会社のGoogle Workspaceでは、管理者がリンク共有を禁止している場合があります。

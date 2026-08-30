@@ -4,7 +4,6 @@ export const APP_CONFIG = Object.freeze({
   defaultTemplateId: "clean",
   sampleDataUrl: "./data/sampleResponses.json",
   maxImagesPerResponse: 6,
-  imageClientMaxBytes: 16 * 1024 * 1024,
 
   // Browser-local settings. Secrets are never hard-coded into the repository.
   storageKey: "pradio-z.settings.v1",

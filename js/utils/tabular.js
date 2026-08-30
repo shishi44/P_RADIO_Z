@@ -1,5 +1,5 @@
-import { APP_CONFIG } from "../config/appConfig.js?v=40";
-import { toStringSafe } from "./helpers.js?v=40";
+import { APP_CONFIG } from "../config/appConfig.js?v=41";
+import { toStringSafe } from "./helpers.js?v=41";
 
 const NAME_HINTS = [
   "お名前(ラジオネーム)", "お名前（ラジオネーム）", "ラジオネーム", "お名前", "名前",
@@ -52,7 +52,15 @@ export function parseImageMetadataCell(value) {
     const mimeType = toStringSafe(item?.mimeType).trim().toLowerCase();
     if (!FILE_ID_PATTERN.test(fileId) || !ALLOWED_IMAGE_TYPES.has(mimeType) || seen.has(fileId)) return [];
     seen.add(fileId);
-    return [{ fileId, name: toStringSafe(item?.name ?? item?.fileName).trim() || "投稿画像", mimeType }];
+    return [{
+      fileId,
+      name: toStringSafe(item?.name ?? item?.fileName).trim() || "投稿画像",
+      mimeType,
+      public: item?.public !== false,
+      resourceKey: toStringSafe(item?.resourceKey).trim(),
+      thumbnailUrl: toStringSafe(item?.thumbnailUrl).trim(),
+      url: toStringSafe(item?.url).trim()
+    }];
   });
 }
 
@@ -87,6 +95,5 @@ export function serializeConnectionForUrl(connection) {
   params.set("content", String(connection.contentColumn));
   params.set("timestamp", String(connection.timestampColumn ?? -1));
   params.set("image", String(connection.imageColumn ?? -1));
-  if (connection.imageGatewayUrl) params.set("gateway", connection.imageGatewayUrl);
   return params;
 }

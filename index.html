@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>パワラジフォーマット</title>
-  <link rel="stylesheet" href="./css/reset.css?v=40">
-  <link rel="stylesheet" href="./css/variables.css?v=40">
-  <link rel="stylesheet" href="./css/base.css?v=40">
-  <link rel="stylesheet" href="./css/editor.css?v=40">
-  <link rel="stylesheet" href="./css/editor-enhancements.css?v=40">
-  <link id="template-stylesheet" rel="stylesheet" href="./templates/clean/clean.css?v=40">
+  <link rel="stylesheet" href="./css/reset.css?v=41">
+  <link rel="stylesheet" href="./css/variables.css?v=41">
+  <link rel="stylesheet" href="./css/base.css?v=41">
+  <link rel="stylesheet" href="./css/editor.css?v=41">
+  <link rel="stylesheet" href="./css/editor-enhancements.css?v=41">
+  <link id="template-stylesheet" rel="stylesheet" href="./templates/clean/clean.css?v=41">
 </head>
 <body class="editor-page">
   <header class="app-header">
@@ -88,24 +88,18 @@
 
   <dialog id="connection-dialog" class="app-dialog">
     <form method="dialog" class="dialog-card dialog-card--wide">
-      <header class="dialog-header"><div><p class="panel__eyebrow">DATA CONNECTION</p><h2>回答データを接続</h2><p>Googleスプレッドシートを回答データ源として使用します。画像は非公開Driveから専用ゲートウェイ経由で表示できます。</p></div><button class="dialog-close" value="cancel" aria-label="閉じる">×</button></header>
+      <header class="dialog-header"><div><p class="panel__eyebrow">DATA CONNECTION</p><h2>回答データを接続</h2><p>Googleスプレッドシートを回答データ源として使用します。画像はApps Scriptが共有リンクを自動作成するため、追加サーバーは不要です。</p></div><button class="dialog-close" value="cancel" aria-label="閉じる">×</button></header>
       <section class="connection-pane is-active connection-pane--single">
-        <div class="easy-steps"><span><b>1</b> フォーム回答をスプレッドシートに保存</span><span><b>2</b> 回答シートを閲覧可能にする</span><span><b>3</b> 画像連携用Apps Scriptを設定</span><span><b>4</b> URLと列を確認して接続</span></div>
+        <div class="easy-steps"><span><b>1</b> フォーム回答をスプレッドシートに保存</span><span><b>2</b> Apps Scriptの初期設定を1回実行</span><span><b>3</b> 回答シートをリンク閲覧可能にする</span><span><b>4</b> シートURLを貼って接続</span></div>
         <label class="field"><span>GoogleスプレッドシートURL</span><input id="sheet-url-input" type="url" placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=0" autocomplete="off"></label>
         <button id="sheet-read-button" class="button button--primary" type="button">シートを読み込む</button>
         <div id="sheet-connect-state" class="inline-state" role="status"></div>
         <div id="sheet-mapping" class="mapping-box" hidden>
           <p class="mapping-title">使う列を確認</p>
           <div class="mapping-grid mapping-grid--four"><label>お名前<select id="sheet-name-column"></select></label><label>内容<select id="sheet-content-column"></select></label><label>タイムスタンプ<select id="sheet-timestamp-column"></select></label><label>画像メタデータ<select id="sheet-image-column"></select></label></div>
-          <div class="gateway-settings">
-            <div class="settings-section__heading"><h3>非公開画像ゲートウェイ</h3><span class="settings-value">B+方式</span></div>
-            <label class="field"><span>Gateway URL</span><input id="gateway-url-input" type="url" placeholder="https://your-image-gateway.run.app" autocomplete="off" spellcheck="false"></label>
-            <label class="field"><span>アクセスキー</span><input id="gateway-token-input" type="password" placeholder="Gateway の P_RADIO_ACCESS_TOKEN" autocomplete="off" spellcheck="false"></label>
-            <p class="mini-note">アクセスキーはこのブラウザにのみ保存します。GitHubリポジトリには書き込みません。画像を使わない場合は空欄でも接続できます。</p>
-          </div>
           <button id="sheet-save-button" class="button button--primary" type="button">この設定で接続</button>
         </div>
-        <p class="privacy-note">回答本文をGVizで読むため、回答シート自体は閲覧可能な共有設定が必要です。画像原本は共有せず、Drive上で非公開のままにします。</p>
+        <p class="privacy-note">回答本文を読むため回答シートは「リンクを知っている全員・閲覧者」にします。投稿画像もApps Scriptが同じくリンク閲覧可能に変更します。URLを知る人は画像を閲覧できます。</p>
       </section>
       <footer class="dialog-footer"><button id="disconnect-button" class="button button--danger" type="button">現在の接続を解除</button><button class="button button--secondary" value="cancel">閉じる</button></footer>
     </form>
@@ -115,15 +109,15 @@
     <form method="dialog" class="dialog-card dialog-card--wide">
       <header class="dialog-header"><div><p class="panel__eyebrow">OBS OUTPUT</p><h2>OBSで使う</h2><p>Browser Sourceまたは専用キャプチャ画面を使用します。単一HTML書き出しは廃止しました。</p></div><button class="dialog-close" value="cancel" aria-label="閉じる">×</button></header>
       <div class="obs-options">
-        <section class="obs-option obs-option--recommended"><span class="recommend-chip">おすすめ</span><h3>ブラウザソースURL ＋ OBSホットキー</h3><p>透明背景のBrowser Sourceです。Google Sheetsを自動更新し、投稿画像もGateway経由で表示します。</p><div class="copy-row"><input id="obs-live-url" type="text" readonly><button id="copy-obs-url" class="button button--primary" type="button">URLをコピー</button></div><div class="obs-inline-actions"><a class="button button--secondary" href="./obs/formviewer-hotkeys.lua" download>ホットキーLuaを保存</a><span>← → お便り移動 / ↑ ↓ 本文スクロール / Home 先頭</span></div><p id="obs-live-note" class="mini-note"></p></section>
+        <section class="obs-option obs-option--recommended"><span class="recommend-chip">おすすめ</span><h3>ブラウザソースURL ＋ OBSホットキー</h3><p>透明背景のBrowser Sourceです。Google Sheetsを自動更新し、投稿画像もそのまま表示します。</p><div class="copy-row"><input id="obs-live-url" type="text" readonly><button id="copy-obs-url" class="button button--primary" type="button">URLをコピー</button></div><div class="obs-inline-actions"><a class="button button--secondary" href="./obs/formviewer-hotkeys.lua" download>ホットキーLuaを保存</a><span>← → お便り移動 / ↑ ↓ 本文スクロール / Home 先頭</span></div><p id="obs-live-note" class="mini-note"></p></section>
         <section class="obs-option"><h3>OBSウィンドウキャプチャ</h3><p>専用キャプチャ画面を別ウィンドウで開きます。同じブラウザ内で選択・スクロール・表示設定を同期します。</p><div class="obs-inline-actions"><button id="open-capture-window" class="button button--secondary" type="button">専用キャプチャ画面を開く</button><span>OBSではウィンドウキャプチャ＋クロマキー / カラーキーを使用してください。</span></div></section>
       </div>
-      <p class="obs-sync-note">画像アクセスキーはBrowser Source URLのフラグメント（#access=...）へ格納され、GitHub PagesへのHTTPリクエストには送信されません。それでもURL自体は秘密情報として扱い、配信画面や公開ページへ表示しないでください。</p>
+      <p class="obs-sync-note">追加の画像アクセスキーは不要です。Browser Source URLは通常の接続情報だけを含みます。</p>
       <footer class="dialog-footer"><button class="button button--secondary" value="cancel">閉じる</button></footer>
     </form>
   </dialog>
 
 
-  <script type="module" src="./js/editor.js?v=40"></script>
+  <script type="module" src="./js/editor.js?v=41"></script>
 </body>
 </html>

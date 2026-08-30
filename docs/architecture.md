@@ -1,60 +1,46 @@
 # Architecture
 
-## 全体
+## 現在の構成
 
 ```text
 Google Form
-  ├─ text response ──> Google Sheets (GViz) ───────────────┐
-  └─ file upload ────> Private Google Drive               │
-                            │                              │
-Apps Script onFormSubmit    │                              │
-  └─ fileId/name/mime ──> FV_IMAGES_JSON ─────────────────┤
-                                                           ▼
-                                                   P_RADIO_Z GitHub Pages
-                                                           │
-                                             Bearer-authenticated fetch
-                                                           ▼
-                                                Cloud Run Image Gateway
-                                                           │
-                                                   Drive API (readonly)
-                                                           ▼
-                                               resize/re-encode to WebP
+  ├─ お名前 / 内容 ───────────────┐
+  └─ ファイルアップロード          │
+              │                    │
+              ▼                    ▼
+        Google Drive         Google Sheets
+              │                    │
+              │              Apps Script onFormSubmit
+              │                    │
+              │        ┌───────────┴───────────┐
+              │        │ FV_IMAGES_JSON         │
+              │        │ fileId / URLs / MIME   │
+              │        └───────────┬───────────┘
+              │                    │
+              └─ link-shared image │
+                                   ▼
+                              P_RADIO_Z
+                         Viewer / OBS / Capture
 ```
 
-## フロントエンド
+## データ取得
 
-回答契約は次の形です。
+本文は従来どおりGoogle SheetsのGViz JSONPを使います。CSV読み込みは廃止済みです。
 
-```js
-{
-  id,
-  submittedAt,
-  name,
-  content,
-  images: [
-    { fileId, name, mimeType }
-  ]
-}
-```
+`FV_IMAGES_JSON` は任意列です。画像質問がないフォームでも本文表示は通常どおり動作します。
 
-`renderResponse()` は管理画面 / Viewer / OBS / Captureで共通です。画像も同じ共通レンダラーから表示します。
+## 画像処理
 
-## データ経路
+Apps Scriptはフォーム送信時に次を行います。
 
-Google SheetsはGViz JSONPを維持し、列マッピングで `FV_IMAGES_JSON` を任意画像列として選択します。画像列がない既存フォームでも本文表示は通常どおり動作します。
+1. 回答シート行のDriveリンクからfileIdを取得する。
+2. 取得できない場合のみFormResponseをフォールバックとして使う。
+3. JPEG / PNG / WebP、最大20MB、最大6枚を検証する。
+4. Driveファイルを `ANYONE_WITH_LINK + VIEW` に変更する。
+5. resource keyとGoogle DriveのサムネイルURLを `FV_IMAGES_JSON` に書く。
 
-## 画像経路
+ブラウザ側は `publicImageService.js` でGoogle Drive URLだけを許可し、`<img>` の `src` として直接読み込みます。Cloud RunやBearerトークンは使いません。
 
-ブラウザはDrive URLへ直接アクセスしません。`imageGatewayService.js` がGatewayへBearer認証付き `fetch()` を行い、Blob URLとしてサムネイル/拡大画像を表示します。
+## 安全性の境界
 
-Gatewayは以下を検証します。
-
-- Bearer token
-- fileId形式
-- 許可Driveフォルダ直下か
-- MIMEがJPEG/PNG/WebPか
-- Drive上のサイズ上限
-- ダウンロード可否
-- 入力画素数
-
-その後WebPへ再エンコードします。
+この構成は「画像がリンクを知る人に見られてもよい」1人運用向けです。画像自体の認証・アクセス制御はありません。機密性が必要になった場合は認証付き画像配信方式へ戻す必要があります。
