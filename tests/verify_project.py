@@ -47,6 +47,15 @@ check('csv-file-input' not in index and 'OBS用HTMLを保存' not in index, 'rem
 check('sheet-image-column' in index, 'image column mapping missing')
 check('gateway-url-input' not in index and 'gateway-token-input' not in index, 'gateway settings UI still present')
 
+for rel in ['assets/icons/favicon-32.png', 'assets/icons/apple-touch-icon.png']:
+    check((root / rel).exists(), f'missing restored icon: {rel}')
+
+base_css = (root / 'css/base.css').read_text(encoding='utf-8')
+check('.response-image__preview[hidden]' in base_css and 'display:block!important' in base_css, 'thumbnail hidden/lazy CSS override missing')
+check('grid-area:1/1' in base_css, 'thumbnail loading state must overlay image')
+check('favicon-32.png?v=42' in index and '<div class="app-mark"' in index, 'legacy app icon not restored')
+check('rel="icon"' in index and 'apple-touch-icon' in index, 'favicon links missing')
+
 apps_script = (root / 'apps-script/Code.gs').read_text(encoding='utf-8')
 for token in ['FV_IMAGES_JSON', 'setupPradioZ', 'ANYONE_WITH_LINK', 'DriveApp.Permission.VIEW', 'thumbnailUrl', 'resourceKey']:
     check(token in apps_script, f'Apps Script requirement missing: {token}')
