@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>パワラジフォーマット</title>
+  <link rel="stylesheet" href="./css/reset.css?v=40">
+  <link rel="stylesheet" href="./css/variables.css?v=40">
+  <link rel="stylesheet" href="./css/base.css?v=40">
+  <link rel="stylesheet" href="./css/editor.css?v=40">
+  <link rel="stylesheet" href="./css/editor-enhancements.css?v=40">
+  <link id="template-stylesheet" rel="stylesheet" href="./templates/clean/clean.css?v=40">
+</head>
+<body class="editor-page">
+  <header class="app-header">
+    <div class="app-header__identity">
+      <div class="app-mark" aria-hidden="true">P</div>
+      <div>
+        <h1 class="app-title">パワラジフォーマット</h1>
+        <p class="app-subtitle">Googleフォームのお便りと投稿画像を配信用に整形</p>
+      </div>
+    </div>
+    <div class="app-header__actions">
+      <div class="sync-meta" aria-live="polite">
+        <button id="connection-button" class="status-badge status-badge--button" type="button">未接続</button>
+        <span id="response-count" title="未確認のお便り">0件</span>
+        <span id="last-updated">未取得</span>
+      </div>
+      <button id="reload-button" class="button button--secondary" type="button"><span aria-hidden="true">↻</span>再読み込み</button>
+      <button id="obs-button" class="button button--secondary" type="button">OBSで使う</button>
+    </div>
+  </header>
+
+  <main class="editor-layout">
+    <aside class="panel responses-panel" aria-label="回答一覧">
+      <div class="panel__header"><div><p class="panel__eyebrow">RESPONSES</p><h2 class="panel__title">回答一覧</h2></div><span id="list-count" class="count-badge">0</span></div>
+      <div class="response-tabs" role="tablist" aria-label="回答の確認状態">
+        <button class="response-tab is-active" type="button" data-response-filter="all">すべて <span id="tab-count-all">0</span></button>
+        <button class="response-tab" type="button" data-response-filter="reviewed">確認済み <span id="tab-count-reviewed">0</span></button>
+        <button class="response-tab" type="button" data-response-filter="unreviewed">未確認 <span id="tab-count-unreviewed">0</span></button>
+      </div>
+      <div class="bulk-review">
+        <span class="bulk-review__label">一括確認</span>
+        <label>#<input id="bulk-review-start" type="number" min="1" value="1" inputmode="numeric" aria-label="開始番号"></label>
+        <span>〜</span>
+        <label>#<input id="bulk-review-end" type="number" min="1" value="1" inputmode="numeric" aria-label="終了番号"></label>
+        <button id="bulk-review-button" class="bulk-review__button" type="button">確認済みにする</button>
+      </div>
+      <div id="responses-state" class="state-box" role="status"></div>
+      <div id="response-list" class="response-list" role="listbox" aria-label="Googleフォーム回答"></div>
+    </aside>
+
+    <section class="workspace" aria-label="プレビュー">
+      <div class="workspace-toolbar">
+        <div><p class="panel__eyebrow">LIVE PREVIEW</p><h2 class="panel__title">プレビュー</h2></div>
+        <div class="workspace-actions">
+          <label class="preview-review-toggle"><input id="preview-reviewed" type="checkbox"><span>確認済み</span></label>
+          <div class="response-nav" aria-label="回答移動">
+            <button id="prev-response" class="icon-button" type="button" aria-label="前のお便り">←</button>
+            <span id="response-position" class="response-position">— / —</span>
+            <button id="next-response" class="icon-button" type="button" aria-label="次のお便り">→</button>
+          </div>
+        </div>
+      </div>
+      <div id="preview-stage" class="preview-stage">
+        <div id="preview-state" class="preview-state" hidden></div>
+        <div id="editor-preview" class="template-host">
+          <article class="template-root" data-template="clean">
+            <header class="template-name-wrap"><p class="template-label" aria-hidden="true">MESSAGE FROM</p><h3 class="response-name"></h3></header>
+            <div class="template-divider" aria-hidden="true"></div>
+            <div class="response-content" tabindex="0"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel settings-panel" aria-label="表示設定">
+      <div class="panel__header panel__header--stack"><p class="panel__eyebrow">APPEARANCE</p><h2 class="panel__title">表示設定</h2><p class="panel__description">テンプレート、文字サイズ、太字表示を調整します。</p></div>
+      <section class="settings-section"><div class="settings-section__heading"><h3>テンプレート</h3><span id="template-name" class="settings-value">Clean</span></div><div id="template-selector" class="template-selector" role="radiogroup" aria-label="テンプレート"></div></section>
+      <section class="settings-section"><div class="settings-section__heading"><h3>お名前</h3><span id="name-size-label" class="settings-value">32px</span></div><div id="name-font-control" class="font-control"></div></section>
+      <section class="settings-section"><div class="settings-section__heading"><h3>内容</h3><span id="content-size-label" class="settings-value">18px</span></div><div id="content-font-control" class="font-control"></div></section>
+      <section class="settings-section"><div class="settings-section__heading"><h3>文字の太さ</h3><span id="bold-text-label" class="settings-value">標準</span></div><label class="switch-row"><span>配信向けに太字を使う</span><input id="bold-text-toggle" type="checkbox" role="switch"><span class="switch-control" aria-hidden="true"></span></label></section>
+      <div class="settings-actions"><button id="reset-template" class="button button--secondary button--full" type="button">テンプレート既定値に戻す</button></div>
+      <p class="settings-note">設定はこのブラウザに自動保存されます。← → キーでもお便りを切り替えられます。</p>
+    </aside>
+  </main>
+
+  <dialog id="connection-dialog" class="app-dialog">
+    <form method="dialog" class="dialog-card dialog-card--wide">
+      <header class="dialog-header"><div><p class="panel__eyebrow">DATA CONNECTION</p><h2>回答データを接続</h2><p>Googleスプレッドシートを回答データ源として使用します。画像は非公開Driveから専用ゲートウェイ経由で表示できます。</p></div><button class="dialog-close" value="cancel" aria-label="閉じる">×</button></header>
+      <section class="connection-pane is-active connection-pane--single">
+        <div class="easy-steps"><span><b>1</b> フォーム回答をスプレッドシートに保存</span><span><b>2</b> 回答シートを閲覧可能にする</span><span><b>3</b> 画像連携用Apps Scriptを設定</span><span><b>4</b> URLと列を確認して接続</span></div>
+        <label class="field"><span>GoogleスプレッドシートURL</span><input id="sheet-url-input" type="url" placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=0" autocomplete="off"></label>
+        <button id="sheet-read-button" class="button button--primary" type="button">シートを読み込む</button>
+        <div id="sheet-connect-state" class="inline-state" role="status"></div>
+        <div id="sheet-mapping" class="mapping-box" hidden>
+          <p class="mapping-title">使う列を確認</p>
+          <div class="mapping-grid mapping-grid--four"><label>お名前<select id="sheet-name-column"></select></label><label>内容<select id="sheet-content-column"></select></label><label>タイムスタンプ<select id="sheet-timestamp-column"></select></label><label>画像メタデータ<select id="sheet-image-column"></select></label></div>
+          <div class="gateway-settings">
+            <div class="settings-section__heading"><h3>非公開画像ゲートウェイ</h3><span class="settings-value">B+方式</span></div>
+            <label class="field"><span>Gateway URL</span><input id="gateway-url-input" type="url" placeholder="https://your-image-gateway.run.app" autocomplete="off" spellcheck="false"></label>
+            <label class="field"><span>アクセスキー</span><input id="gateway-token-input" type="password" placeholder="Gateway の P_RADIO_ACCESS_TOKEN" autocomplete="off" spellcheck="false"></label>
+            <p class="mini-note">アクセスキーはこのブラウザにのみ保存します。GitHubリポジトリには書き込みません。画像を使わない場合は空欄でも接続できます。</p>
+          </div>
+          <button id="sheet-save-button" class="button button--primary" type="button">この設定で接続</button>
+        </div>
+        <p class="privacy-note">回答本文をGVizで読むため、回答シート自体は閲覧可能な共有設定が必要です。画像原本は共有せず、Drive上で非公開のままにします。</p>
+      </section>
+      <footer class="dialog-footer"><button id="disconnect-button" class="button button--danger" type="button">現在の接続を解除</button><button class="button button--secondary" value="cancel">閉じる</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="obs-dialog" class="app-dialog">
+    <form method="dialog" class="dialog-card dialog-card--wide">
+      <header class="dialog-header"><div><p class="panel__eyebrow">OBS OUTPUT</p><h2>OBSで使う</h2><p>Browser Sourceまたは専用キャプチャ画面を使用します。単一HTML書き出しは廃止しました。</p></div><button class="dialog-close" value="cancel" aria-label="閉じる">×</button></header>
+      <div class="obs-options">
+        <section class="obs-option obs-option--recommended"><span class="recommend-chip">おすすめ</span><h3>ブラウザソースURL ＋ OBSホットキー</h3><p>透明背景のBrowser Sourceです。Google Sheetsを自動更新し、投稿画像もGateway経由で表示します。</p><div class="copy-row"><input id="obs-live-url" type="text" readonly><button id="copy-obs-url" class="button button--primary" type="button">URLをコピー</button></div><div class="obs-inline-actions"><a class="button button--secondary" href="./obs/formviewer-hotkeys.lua" download>ホットキーLuaを保存</a><span>← → お便り移動 / ↑ ↓ 本文スクロール / Home 先頭</span></div><p id="obs-live-note" class="mini-note"></p></section>
+        <section class="obs-option"><h3>OBSウィンドウキャプチャ</h3><p>専用キャプチャ画面を別ウィンドウで開きます。同じブラウザ内で選択・スクロール・表示設定を同期します。</p><div class="obs-inline-actions"><button id="open-capture-window" class="button button--secondary" type="button">専用キャプチャ画面を開く</button><span>OBSではウィンドウキャプチャ＋クロマキー / カラーキーを使用してください。</span></div></section>
+      </div>
+      <p class="obs-sync-note">画像アクセスキーはBrowser Source URLのフラグメント（#access=...）へ格納され、GitHub PagesへのHTTPリクエストには送信されません。それでもURL自体は秘密情報として扱い、配信画面や公開ページへ表示しないでください。</p>
+      <footer class="dialog-footer"><button class="button button--secondary" value="cancel">閉じる</button></footer>
+    </form>
+  </dialog>
+
+
+  <script type="module" src="./js/editor.js?v=40"></script>
+</body>
+</html>

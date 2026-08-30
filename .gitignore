@@ -1,0 +1,17 @@
+# Secrets / local configuration
+.env
+.env.*
+*.pem
+*.key
+*service-account*.json
+*credentials*.json
+
+# Node
+gateway/node_modules/
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
